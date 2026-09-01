@@ -331,47 +331,60 @@ export default function ClientView() {
                       key={item.id}
                       variants={itemMotion}
                       whileHover={{ y: -4, scale: 1.01 }}
-                      className="bg-[#121215] border border-neutral-800/80 rounded-2xl p-5 hover:border-amber-400/60 hover:shadow-[0_4px_30px_rgba(251,191,36,0.12)] transition-all duration-300 flex flex-col justify-between group relative overflow-hidden"
+                      className="bg-[#121215] border border-neutral-800/80 rounded-2xl overflow-hidden hover:border-amber-400/60 hover:shadow-[0_4px_30px_rgba(251,191,36,0.15)] transition-all duration-300 flex flex-col justify-between group relative"
                     >
-                      {/* Borde sutil superior dorado al hover */}
-                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                      <div>
-                        {/* Cabecera de la tarjeta: Título + Marca */}
-                        <div className="flex justify-between items-start gap-2 mb-2">
-                          <h3 className="text-lg md:text-xl font-black text-neutral-100 uppercase tracking-wide group-hover:text-amber-400 transition-colors font-serif leading-tight">
-                            {item.name}
-                          </h3>
+                      {/* Imagen Stock en Alta Calidad */}
+                      {item.image_url && (
+                        <div className="w-full h-44 bg-neutral-900 relative overflow-hidden">
+                          <img 
+                            src={item.image_url} 
+                            alt={item.name}
+                            loading="lazy" 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#121215] via-transparent to-black/30" />
                           {item.brand && item.brand !== 'Tiempo' && (
-                            <span className="text-[10px] font-mono font-bold bg-neutral-800 text-amber-300 px-2 py-0.5 rounded border border-neutral-700 shrink-0 uppercase">
+                            <span className="absolute top-3 right-3 text-[10px] font-mono font-bold bg-neutral-950/80 backdrop-blur-md text-amber-300 px-2.5 py-1 rounded-md border border-neutral-700/80 shadow-sm uppercase">
                               {item.brand}
                             </span>
                           )}
                         </div>
+                      )}
 
-                        {/* Descripción / Ingredientes */}
-                        <p className="text-neutral-400 text-xs md:text-sm font-sans leading-relaxed mb-6">
-                          {item.description}
-                        </p>
-                      </div>
+                      {/* Contenido de la Tarjeta */}
+                      <div className="p-5 flex flex-col flex-grow justify-between">
+                        <div>
+                          {/* Título */}
+                          <div className="flex justify-between items-start gap-2 mb-2">
+                            <h3 className="text-lg md:text-xl font-black text-neutral-100 uppercase tracking-wide group-hover:text-amber-400 transition-colors font-serif leading-tight">
+                              {item.name}
+                            </h3>
+                          </div>
 
-                      {/* Pie de tarjeta: Precio y Botón Agregar */}
-                      <div className="flex items-center justify-between pt-4 border-t border-neutral-800/60 mt-auto">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">Precio</span>
-                          <span className="text-2xl md:text-3xl font-black text-amber-400 font-mono tracking-tight">
-                            ${item.price.toLocaleString('es-CL')}
-                          </span>
+                          {/* Descripción / Ingredientes */}
+                          <p className="text-neutral-400 text-xs md:text-sm font-sans leading-relaxed mb-6">
+                            {item.description}
+                          </p>
                         </div>
 
-                        <motion.button
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => addToCart(item)}
-                          className="w-11 h-11 rounded-xl bg-amber-400 hover:bg-amber-300 text-neutral-950 flex items-center justify-center font-black shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all group-hover:scale-105"
-                          title="Añadir a la orden"
-                        >
-                          <Plus size={22} strokeWidth={3} />
-                        </motion.button>
+                        {/* Pie de tarjeta: Precio y Botón Agregar */}
+                        <div className="flex items-center justify-between pt-4 border-t border-neutral-800/60 mt-auto">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">Precio</span>
+                            <span className="text-2xl md:text-3xl font-black text-amber-400 font-mono tracking-tight">
+                              ${item.price.toLocaleString('es-CL')}
+                            </span>
+                          </div>
+
+                          <motion.button
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => addToCart(item)}
+                            className="w-11 h-11 rounded-xl bg-amber-400 hover:bg-amber-300 text-neutral-950 flex items-center justify-center font-black shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all group-hover:scale-105"
+                            title="Añadir a la orden"
+                          >
+                            <Plus size={22} strokeWidth={3} />
+                          </motion.button>
+                        </div>
                       </div>
                     </motion.div>
                   ))}

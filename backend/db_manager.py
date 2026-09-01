@@ -37,6 +37,7 @@ class MenuItem:
     category: str
     sector: str
     brand: str
+    image_url: Optional[str] = None
 
     @classmethod
     def from_row(cls, row: sqlite3.Row) -> "MenuItem":
@@ -49,6 +50,7 @@ class MenuItem:
             category=row["category"] or "General",
             sector=row["sector"] or "General",
             brand=row["brand"] or "Tiempo",
+            image_url=row["image_url"] if "image_url" in row.keys() else None,
         )
 
 @dataclass
@@ -157,8 +159,8 @@ class SecureDatabaseManager:
         with self._get_connection() as conn:
             conn.execute(
                 """
-                INSERT INTO menu_items (id, name, description, price, available, category, sector, brand)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO menu_items (id, name, description, price, available, category, sector, brand, image_url)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     name = excluded.name,
                     description = excluded.description,
@@ -166,7 +168,8 @@ class SecureDatabaseManager:
                     available = excluded.available,
                     category = excluded.category,
                     sector = excluded.sector,
-                    brand = excluded.brand;
+                    brand = excluded.brand,
+                    image_url = excluded.image_url;
                 """,
                 (
                     item.id,
@@ -177,6 +180,7 @@ class SecureDatabaseManager:
                     item.category,
                     item.sector,
                     item.brand,
+                    item.image_url,
                 )
             )
             conn.commit()

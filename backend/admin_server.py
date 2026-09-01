@@ -245,8 +245,13 @@ Cargando telemetría...
         menuBody.innerHTML = menu.map(item => `
           <tr class="hover:bg-neutral-900/50 transition-colors">
             <td class="p-4">
-              <div class="font-bold text-white uppercase">${item.name}</div>
-              <div class="text-xs text-neutral-500">${item.description}</div>
+              <div class="flex items-center gap-3">
+                ${item.image_url ? `<img src="${item.image_url}" class="w-12 h-12 object-cover rounded-xl border border-neutral-700 shrink-0" />` : ''}
+                <div>
+                  <div class="font-bold text-white uppercase">${item.name}</div>
+                  <div class="text-xs text-neutral-500">${item.description}</div>
+                </div>
+              </div>
             </td>
             <td class="p-4">
               <span class="px-2.5 py-1 bg-neutral-800 text-amber-400 text-xs font-mono rounded-lg border border-neutral-700">${item.category}</span>
