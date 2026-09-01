@@ -40,10 +40,10 @@ INSERT INTO menu_items (id, name, description, price, available, category, secto
 ('beb-lata', 'BEBIDA EN LATA', 'Variedad de bebidas en lata 350ml (Coca-Cola, Fanta, Sprite).', 1500, 1, 'BEBESTIBLES', 'Sector Concepción, Chile', 'CCU / Coca-Cola', 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=600&q=80'),
 ('beb-agua-sabor', 'AGUA MINERAL CON SABOR', 'Agua mineral saborizada 500ml.', 1500, 1, 'BEBESTIBLES', 'Sector Concepción, Chile', 'Vital / Cachantun', 'https://images.unsplash.com/photo-1559839914-17aae19cec71?auto=format&fit=crop&w=600&q=80'),
 ('beb-agua-gas', 'AGUA MINERAL (CON Y SIN GAS)', 'Agua mineral purificada 500ml.', 1500, 1, 'BEBESTIBLES', 'Sector Concepción, Chile', 'Vital / Cachantun', 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=600&q=80'),
-('beb-score', 'SCORE', 'Bebida energética Score 500ml.', 1800, 1, 'BEBESTIBLES', 'Sector Concepción, Chile', 'Score', 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=600&q=80'),
+('beb-score', 'SCORE', 'Bebida energética Score 500ml.', 1800, 1, 'BEBESTIBLES', 'Sector Concepción, Chile', 'Score', 'https://images.unsplash.com/photo-1622543925917-763c34d1a86e?auto=format&fit=crop&w=600&q=80'),
 ('beb-te', 'TÉ', 'Té caliente tradicional selección.', 1000, 1, 'BEBESTIBLES', 'Sector Concepción, Chile', 'Tiempo', 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=600&q=80'),
 ('beb-cafe', 'CAFÉ', 'Café caliente aromático.', 1000, 1, 'BEBESTIBLES', 'Sector Concepción, Chile', 'Tiempo', 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=600&q=80'),
-('beb-milo', 'MILO', 'Leche caliente con Milo.', 1000, 1, 'BEBESTIBLES', 'Sector Concepción, Chile', 'Nestlé', 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=600&q=80'),
+('beb-milo', 'MILO', 'Leche caliente con Milo.', 1000, 1, 'BEBESTIBLES', 'Sector Concepción, Chile', 'Nestlé', 'https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?auto=format&fit=crop&w=600&q=80'),
 
 -- AGREGADOS
 ('agr-champ', 'AGREGADO CHAMPIÑÓN', 'Porción extra de champiñones salteados.', 1000, 1, 'AGREGADOS', 'Sector Concepción, Chile', 'Tiempo', 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80'),
