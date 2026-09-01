@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, Plus, Minus, Download, X } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Download, X, Check, SlidersHorizontal } from 'lucide-react';
 
-// Variantes de animación con física de resortes orgánicos
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -23,7 +22,18 @@ const cardVariants = {
   }
 };
 
-// Cintas de Categoría con Tipografía Pura (Sin íconos innecesarios)
+const AVAILABLE_EXTRAS = [
+  { id: 'champ', name: 'Champiñón', price: 1000 },
+  { id: 'choclo', name: 'Choclo', price: 1000 },
+  { id: 'queso', name: 'Queso Fundido', price: 1000 },
+  { id: 'poroto', name: 'Poroto Verde', price: 1000 }
+];
+
+const BREAD_OPTIONS = [
+  'Pan Marraqueta',
+  'Pan de Hamburguesa'
+];
+
 function CategoryRibbon({ title }) {
   return (
     <div className="relative my-10 sm:my-12 flex items-center justify-center select-none">
@@ -45,6 +55,11 @@ export default function ClientView() {
   const [checkingOut, setCheckingOut] = useState(false);
   const [activeCategory, setActiveCategory] = useState('TODOS');
   const [notification, setNotification] = useState(null);
+
+  // Modal de Personalización (Ingredientes Extra y Pan)
+  const [customizingItem, setCustomizingItem] = useState(null);
+  const [selectedExtras, setSelectedExtras] = useState([]);
+  const [selectedBread, setSelectedBread] = useState('Pan Marraqueta');
 
   // Horario de atención: Cierre estricto a las 18:00 hrs
   const [timeLeft, setTimeLeft] = useState('');
@@ -93,32 +108,91 @@ export default function ClientView() {
     setTimeout(() => setNotification(null), 2200);
   };
 
-  const addToCart = (item) => {
+  // Abrir modal de personalización o añadir directo si no aplica
+  const handleItemClick = (item) => {
+    if (!isOpen) {
+      showToast('Cocina cerrada por hoy (Horario hasta las 18:00)', true);
+      return;
+    }
+
+    // Categorías con soporte de agregados extra
+    if (['SANDWICHES', 'COMPLETOS', 'PAPAS FRITAS'].includes(item.category)) {
+      setCustomizingItem(item);
+      setSelectedExtras([]);
+      setSelectedBread('Pan Marraqueta');
+    } else {
+      addDirectToCart(item);
+    }
+  };
+
+  const addDirectToCart = (item) => {
     if (!isOpen) {
       showToast('Cocina cerrada por hoy (Horario hasta las 18:00)', true);
       return;
     }
     setCart(prev => {
-      const existing = prev.find(i => i.id === item.id);
+      const cartKey = item.id;
+      const existing = prev.find(i => i.cartKey === cartKey);
       if (existing) {
-        return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
+        return prev.map(i => i.cartKey === cartKey ? { ...i, quantity: i.quantity + 1 } : i);
       }
-      return [...prev, { ...item, quantity: 1 }];
+      return [...prev, { ...item, cartKey, extras: [], bread: null, finalUnitPrice: item.price, quantity: 1 }];
     });
     showToast(`Añadido: ${item.name}`);
   };
 
-  const removeFromCart = (id) => {
+  const confirmCustomItem = () => {
+    if (!customizingItem) return;
+
+    const extrasCost = selectedExtras.reduce((sum, ext) => sum + ext.price, 0);
+    const finalUnitPrice = customizingItem.price + extrasCost;
+    const extrasKey = selectedExtras.map(e => e.id).sort().join('_');
+    const breadKey = customizingItem.category === 'SANDWICHES' ? selectedBread : '';
+    const cartKey = `${customizingItem.id}_${extrasKey}_${breadKey}`;
+
     setCart(prev => {
-      const existing = prev.find(i => i.id === id);
-      if (existing && existing.quantity === 1) {
-        return prev.filter(i => i.id !== id);
+      const existing = prev.find(i => i.cartKey === cartKey);
+      if (existing) {
+        return prev.map(i => i.cartKey === cartKey ? { ...i, quantity: i.quantity + 1 } : i);
       }
-      return prev.map(i => i.id === id ? { ...i, quantity: i.quantity - 1 } : i);
+      return [
+        ...prev,
+        {
+          ...customizingItem,
+          cartKey,
+          extras: [...selectedExtras],
+          bread: customizingItem.category === 'SANDWICHES' ? selectedBread : null,
+          finalUnitPrice,
+          quantity: 1
+        }
+      ];
+    });
+
+    showToast(`Añadido: ${customizingItem.name}`);
+    setCustomizingItem(null);
+  };
+
+  const toggleExtra = (extra) => {
+    setSelectedExtras(prev => {
+      const exists = prev.some(e => e.id === extra.id);
+      if (exists) {
+        return prev.filter(e => e.id !== extra.id);
+      }
+      return [...prev, extra];
     });
   };
 
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const removeFromCart = (cartKey) => {
+    setCart(prev => {
+      const existing = prev.find(i => i.cartKey === cartKey);
+      if (existing && existing.quantity === 1) {
+        return prev.filter(i => i.cartKey !== cartKey);
+      }
+      return prev.map(i => i.cartKey === cartKey ? { ...i, quantity: i.quantity - 1 } : i);
+    });
+  };
+
+  const total = cart.reduce((sum, item) => sum + (item.finalUnitPrice || item.price) * item.quantity, 0);
 
   const handleCheckout = async (method) => {
     setCheckingOut(true);
@@ -157,14 +231,18 @@ export default function ClientView() {
     ? CATEGORY_SECTIONS 
     : CATEGORY_SECTIONS.filter(c => c.key === activeCategory);
 
+  const currentModalPrice = customizingItem 
+    ? customizingItem.price + selectedExtras.reduce((sum, e) => sum + e.price, 0)
+    : 0;
+
   return (
     <div className="min-h-screen bg-[#09090c] text-neutral-100 font-sans selection:bg-amber-400 selection:text-neutral-950 relative overflow-x-hidden">
       
-      {/* Resplandor Atmosférico Cálido */}
+      {/* Resplandor Atmosférico */}
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-amber-500/10 rounded-full blur-[140px] pointer-events-none z-0 animate-pulse duration-10000" />
       <div className="fixed bottom-0 right-0 w-[500px] h-[500px] bg-orange-600/5 rounded-full blur-[160px] pointer-events-none z-0" />
 
-      {/* Toast Notification Flotante */}
+      {/* Toast Notification */}
       <AnimatePresence>
         {notification && (
           <motion.div
@@ -183,10 +261,10 @@ export default function ClientView() {
         )}
       </AnimatePresence>
 
-      {/* Header & Logo estilo Volante Oficial */}
+      {/* Header & Logo */}
       <header className="relative z-10 pt-6 sm:pt-10 pb-6 px-4 max-w-7xl mx-auto flex flex-col items-center text-center">
         
-        {/* Barra Superior con Información Esencial */}
+        {/* Barra Superior */}
         <div className="w-full flex flex-col sm:flex-row justify-between items-center gap-3 mb-8 border-b border-neutral-800/80 pb-4">
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 sm:gap-3 text-xs sm:text-sm font-mono">
             {isOpen ? (
@@ -219,7 +297,7 @@ export default function ClientView() {
           </div>
         </div>
 
-        {/* Emblema Circular Oficial TIEMPO */}
+        {/* Emblema Circular */}
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -227,7 +305,6 @@ export default function ClientView() {
           className="relative group mb-4"
         >
           <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-full border-4 border-amber-400/90 bg-[#0d0d12] p-4 flex flex-col items-center justify-center shadow-[0_0_50px_rgba(251,191,36,0.3)] relative overflow-hidden">
-            {/* Anillo de reloj giratorio */}
             <div className="absolute inset-0 opacity-15 border-[6px] border-dashed border-amber-400 rounded-full animate-[spin_80s_linear_infinite]" />
             <span className="font-black text-3xl sm:text-4xl tracking-tighter text-amber-400 uppercase leading-none font-serif drop-shadow-[0_2px_10px_rgba(251,191,36,0.4)]">
               TIEMPO
@@ -238,7 +315,7 @@ export default function ClientView() {
           </div>
         </motion.div>
 
-        {/* Título Principal */}
+        {/* Título */}
         <motion.h1 
           initial={{ y: 15, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -247,10 +324,10 @@ export default function ClientView() {
           NUESTRO MENÚ
         </motion.h1>
         <p className="text-neutral-300 text-sm sm:text-base max-w-xl mt-2.5 font-normal leading-relaxed">
-          Comida tradicional preparada en el momento. Sándwiches mechada, completos clásicos y las mejores papas de Concepción.
+          Comida tradicional preparada en el momento. Personaliza tus sándwiches y completos con nuestros agregados frescos.
         </p>
 
-        {/* Filtro de Categorías Interactivo */}
+        {/* Filtro de Categorías */}
         <div className="w-full flex items-center justify-start sm:justify-center overflow-x-auto gap-2 mt-8 pb-3 pt-1 px-2 no-scrollbar">
           <button
             onClick={() => setActiveCategory('TODOS')}
@@ -290,6 +367,8 @@ export default function ClientView() {
             const itemsInCategory = menu.filter(item => item.category === cat.key);
             if (itemsInCategory.length === 0) return null;
 
+            const isCustomizableCategory = ['SANDWICHES', 'COMPLETOS', 'PAPAS FRITAS'].includes(cat.key);
+
             return (
               <section key={cat.key} className="mb-14 sm:mb-16">
                 <CategoryRibbon title={cat.title} />
@@ -305,9 +384,10 @@ export default function ClientView() {
                       key={item.id}
                       variants={cardVariants}
                       whileHover={{ y: -5 }}
-                      className="bg-[#121217] border border-neutral-800 rounded-3xl overflow-hidden hover:border-amber-400/80 hover:shadow-[0_10px_40px_rgba(251,191,36,0.2)] transition-all duration-300 flex flex-col justify-between group relative"
+                      onClick={() => handleItemClick(item)}
+                      className="bg-[#121217] border border-neutral-800 rounded-3xl overflow-hidden hover:border-amber-400/80 hover:shadow-[0_10px_40px_rgba(251,191,36,0.2)] transition-all duration-300 flex flex-col justify-between group relative cursor-pointer"
                     >
-                      {/* Imagen Gastronómica 16:9 con Brillo */}
+                      {/* Imagen Gastronómica */}
                       {item.image_url && (
                         <div className="w-full h-48 sm:h-52 bg-neutral-900 relative overflow-hidden">
                           <img 
@@ -324,10 +404,16 @@ export default function ClientView() {
                               {item.brand}
                             </span>
                           )}
+
+                          {isCustomizableCategory && (
+                            <span className="absolute bottom-3 left-3 text-[10px] font-mono font-bold bg-amber-400 text-neutral-950 px-2.5 py-0.5 rounded-full uppercase shadow-md flex items-center gap-1">
+                              <SlidersHorizontal size={10} /> Con Agregados
+                            </span>
+                          )}
                         </div>
                       )}
 
-                      {/* Contenido con Tipografía Limpia */}
+                      {/* Contenido */}
                       <div className="p-6 flex flex-col flex-grow justify-between">
                         <div>
                           <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-wide group-hover:text-amber-400 transition-colors font-serif leading-tight mb-2">
@@ -350,7 +436,10 @@ export default function ClientView() {
 
                           <motion.button
                             whileTap={{ scale: 0.9 }}
-                            onClick={() => addToCart(item)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleItemClick(item);
+                            }}
                             className="w-12 h-12 rounded-2xl bg-amber-400 hover:bg-amber-300 text-neutral-950 flex items-center justify-center font-black shadow-[0_0_20px_rgba(251,191,36,0.3)] transition-all group-hover:scale-105 active:bg-amber-500"
                             title="Añadir"
                             aria-label={`Añadir ${item.name}`}
@@ -367,6 +456,121 @@ export default function ClientView() {
           })
         )}
       </main>
+
+      {/* Modal de Personalización (Ingredientes Extra / Pan) */}
+      <AnimatePresence>
+        {customizingItem && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setCustomizingItem(null)}
+              className="fixed inset-0 bg-black/85 backdrop-blur-md z-[110]"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 260 }}
+              className="fixed inset-x-4 top-[10%] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 w-full max-w-lg bg-[#111116] border-2 border-amber-400/60 rounded-3xl z-[120] p-6 shadow-2xl overflow-hidden max-h-[85vh] flex flex-col"
+            >
+              {/* Cabecera del Modal */}
+              <div className="flex justify-between items-start border-b border-neutral-800 pb-4 mb-4">
+                <div>
+                  <h3 className="text-2xl font-black text-white uppercase font-serif">{customizingItem.name}</h3>
+                  <p className="text-xs text-neutral-400 mt-0.5">{customizingItem.description}</p>
+                </div>
+                <button
+                  onClick={() => setCustomizingItem(null)}
+                  className="p-1.5 text-neutral-400 hover:text-white rounded-xl hover:bg-neutral-800"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="overflow-y-auto space-y-6 pr-1 flex-grow">
+                {/* Selección de Pan (Solo para Sandwiches) */}
+                {customizingItem.category === 'SANDWICHES' && (
+                  <div>
+                    <h4 className="text-xs font-mono uppercase tracking-wider text-amber-400 font-bold mb-2.5">
+                      1. Elige tu tipo de pan
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {BREAD_OPTIONS.map(bread => (
+                        <button
+                          key={bread}
+                          onClick={() => setSelectedBread(bread)}
+                          className={`p-3 rounded-xl text-xs sm:text-sm font-bold border text-left transition-all ${
+                            selectedBread === bread
+                              ? 'bg-amber-400 text-neutral-950 border-amber-400 shadow-md font-black'
+                              : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:border-neutral-700'
+                          }`}
+                        >
+                          {bread}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Agregados Extra (+$1.000 c/u) */}
+                <div>
+                  <div className="flex justify-between items-center mb-2.5">
+                    <h4 className="text-xs font-mono uppercase tracking-wider text-amber-400 font-bold">
+                      {customizingItem.category === 'SANDWICHES' ? '2. Agregados Extras' : 'Agregados Extras'}
+                    </h4>
+                    <span className="text-[11px] text-neutral-400 font-mono">+$1.000 c/u</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {AVAILABLE_EXTRAS.map(extra => {
+                      const isSelected = selectedExtras.some(e => e.id === extra.id);
+                      return (
+                        <button
+                          key={extra.id}
+                          onClick={() => toggleExtra(extra)}
+                          className={`p-3.5 rounded-xl text-xs sm:text-sm font-bold border flex items-center justify-between transition-all ${
+                            isSelected
+                              ? 'bg-amber-400/15 border-amber-400 text-amber-300 shadow-[0_0_15px_rgba(251,191,36,0.2)]'
+                              : 'bg-neutral-900/90 border-neutral-800 text-neutral-300 hover:border-neutral-700'
+                          }`}
+                        >
+                          <span>{extra.name}</span>
+                          <span className={`w-5 h-5 rounded-md flex items-center justify-center text-xs font-mono ${
+                            isSelected ? 'bg-amber-400 text-neutral-950 font-black' : 'border border-neutral-700'
+                          }`}>
+                            {isSelected ? <Check size={12} strokeWidth={3} /> : '+'}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Botón de Confirmación con Precio Dinámico */}
+              <div className="pt-4 mt-4 border-t border-neutral-800 flex items-center justify-between gap-4">
+                <div>
+                  <span className="text-[11px] font-mono text-neutral-400 block">Total con agregados</span>
+                  <span className="text-2xl font-black text-amber-400 font-mono">
+                    ${currentModalPrice.toLocaleString('es-CL')}
+                  </span>
+                </div>
+
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={confirmCustomItem}
+                  className="px-6 py-3.5 bg-amber-400 hover:bg-amber-300 text-neutral-950 rounded-2xl font-black text-sm tracking-wide shadow-[0_0_25px_rgba(251,191,36,0.4)] transition-all"
+                >
+                  Añadir a la Orden
+                </motion.button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Carrito Flotante */}
       <motion.button
@@ -420,7 +624,7 @@ export default function ClientView() {
                 </button>
               </div>
 
-              {/* Lista de Platos */}
+              {/* Lista de Platos con Detalle de Extras */}
               <div className="flex-grow overflow-y-auto p-6 space-y-3">
                 {cart.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-center py-16">
@@ -431,18 +635,38 @@ export default function ClientView() {
                   cart.map(item => (
                     <motion.div
                       layout
-                      key={item.id}
-                      className="bg-neutral-900/90 border border-neutral-800 rounded-2xl p-4 flex justify-between items-center shadow-sm"
+                      key={item.cartKey}
+                      className="bg-neutral-900/90 border border-neutral-800 rounded-2xl p-4 flex justify-between items-start shadow-sm"
                     >
                       <div className="flex-1 pr-3">
-                        <h4 className="font-bold text-sm sm:text-base text-white uppercase">{item.name}</h4>
-                        <span className="text-amber-400 font-mono font-bold text-sm">
-                          ${(item.price * item.quantity).toLocaleString('es-CL')}
-                        </span>
+                        <h4 className="font-bold text-sm sm:text-base text-white uppercase leading-tight">{item.name}</h4>
+                        
+                        {/* Pan seleccionado */}
+                        {item.bread && (
+                          <div className="text-[11px] font-mono text-amber-300/90 mt-0.5">
+                            🍞 {item.bread}
+                          </div>
+                        )}
+
+                        {/* Extras seleccionados */}
+                        {item.extras && item.extras.length > 0 && (
+                          <div className="text-[11px] text-neutral-400 mt-1 space-y-0.5">
+                            {item.extras.map(e => (
+                              <span key={e.id} className="inline-block bg-neutral-800 px-1.5 py-0.5 rounded text-[10px] mr-1 text-neutral-300">
+                                + {e.name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="text-amber-400 font-mono font-bold text-sm mt-2">
+                          ${((item.finalUnitPrice || item.price) * item.quantity).toLocaleString('es-CL')}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 bg-neutral-950 border border-neutral-800 p-1.5 rounded-xl">
+
+                      <div className="flex items-center gap-2 bg-neutral-950 border border-neutral-800 p-1.5 rounded-xl shrink-0">
                         <button
-                          onClick={() => removeFromCart(item.id)}
+                          onClick={() => removeFromCart(item.cartKey)}
                           className="p-1 hover:bg-neutral-800 rounded-lg text-neutral-300 hover:text-white"
                           aria-label="Disminuir"
                         >
@@ -452,7 +676,9 @@ export default function ClientView() {
                           {item.quantity}
                         </span>
                         <button
-                          onClick={() => addToCart(item)}
+                          onClick={() => {
+                            setCart(prev => prev.map(i => i.cartKey === item.cartKey ? { ...i, quantity: i.quantity + 1 } : i));
+                          }}
                           className="p-1 hover:bg-neutral-800 rounded-lg text-neutral-300 hover:text-white"
                           aria-label="Aumentar"
                         >
@@ -497,7 +723,7 @@ export default function ClientView() {
         )}
       </AnimatePresence>
 
-      {/* Footer Vintage Limpio */}
+      {/* Footer Vintage */}
       <footer className="border-t border-neutral-800/80 bg-[#07070a] text-neutral-400 text-xs py-10 px-4">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
           <div className="flex items-center gap-2">
