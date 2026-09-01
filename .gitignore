@@ -1,0 +1,53 @@
+# ==========================================
+# NIGHTBITE / TIEMPO - SECURITY .GITIGNORE
+# ==========================================
+
+# Secretos y variables de entorno (CRÍTICO)
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+*.pem
+*.key
+*.cert
+
+# Cloudflare Wrangler & Miniflare State
+.wrangler/
+.mf/
+
+# Dependencias
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+
+# Builds y Bundles
+frontend/dist/
+dist/
+build/
+.rollup.cache/
+
+# Base de datos local (evitar commits de datos efímeros)
+*.sqlite
+*.sqlite3
+*.db
+*.sqlite-shm
+*.sqlite-wal
+
+# Logs y depuración
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Sistema operativo y editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

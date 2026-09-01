@@ -1,0 +1,9 @@
+name = "nightbite-backend"
+main = "src/index.js"
+compatibility_date = "2024-02-28"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "nightbite-db"
+database_id = "local-dev-id" # Dummy ID for local dev
