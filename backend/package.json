@@ -8,7 +8,7 @@
     "deploy": "wrangler deploy"
   },
   "devDependencies": {
-    "wrangler": "^4.127.1"
+    "wrangler": "^4.147.0"
   },
   "dependencies": {
     "pdfkit": "^0.20.2"
